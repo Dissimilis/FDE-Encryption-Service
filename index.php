@@ -91,6 +91,7 @@ function notify($title, $message, $priority = 0, $sound = 'gamelan')
 }
 
 function logMessage($message, $push = true) {
+    global $logFilePath; 
     $timestamp = date('[Y-m-d H:i:s]');
     $logMessage = $timestamp . ' ' . $message;
 	$clientIpAddress = $_SERVER['REMOTE_ADDR'];
