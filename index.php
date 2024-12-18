@@ -1,9 +1,12 @@
 <?php
 
-$userAuthPassword = 'abc';
-$clientAuthKey = 'xyz';
-$aesKey = 'xxx';
-$aesIv = 'd7575a8ffbce7bbc';
+$userAuthPassword = getenv('USER_AUTH_PASSWORD') ?: 'abc';
+$clientAuthKey = getenv('CLIENT_AUTH_KEY') ?: 'xyz';
+$aesKey = getenv('AES_KEY') ?: 'xxx';
+$aesIv = getenv('AES_IV') ?: 'd7575a8ffbce7bbc';
+$logFilePath = getenv('LOG_FILE_PATH') ?: 'log.txt';
+
+
 
 function encryptData($data, $password) {
     // Generate a secure, random salt
@@ -88,7 +91,6 @@ function notify($title, $message, $priority = 0, $sound = 'gamelan')
 }
 
 function logMessage($message, $push = true) {
-    $logFile = 'app.log';
     $timestamp = date('[Y-m-d H:i:s]');
     $logMessage = $timestamp . ' ' . $message;
 	$clientIpAddress = $_SERVER['REMOTE_ADDR'];
@@ -101,7 +103,7 @@ function logMessage($message, $push = true) {
 		notify('Encryptor log',$logMessage, -1);
 	}
 	
-    file_put_contents($logFile, $logMessage, FILE_APPEND);
+    file_put_contents($logFilePath, $logMessage, FILE_APPEND);
 }
 function readEncryptionKey() {
     $filePath = 'encryption_key.txt';   
