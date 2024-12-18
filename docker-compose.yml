@@ -12,7 +12,7 @@ services:
       CLIENT_AUTH_KEY: xyz
       AES_KEY: xxx
       AES_IV: d7575a8ffbce7bbc
-      LOG_FILE_PATH: /var/www/data/log.txt
+      LOG_FILE_PATH: log.txt
     restart: always
 volumes:
   fde-data:
