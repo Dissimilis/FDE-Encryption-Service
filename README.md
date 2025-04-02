@@ -1,47 +1,95 @@
 # FDE Encryption Service
 
-## A Secure Solution for Data Protection
+## A Secure Key Management System for Full Disk Encryption
 
-The FDE Encryption Service is a reliable and secure system designed for managing encryption keys and safeguarding sensitive data. By leveraging a one-time password (OTP) mechanism, along with real-time notifications and detailed logging, this service ensures encryption and decryption are both robust and user-friendly.
-
-## Overview
-
-The service operates through two primary components:
-
-- **Client.php**: Responsible for OTP generation, user notifications, and retrieving encryption keys from a secure endpoint.
-- **Service.php**: Handles data encryption, decryption, and the management of encryption keys.
-
-Together, these components provide a seamless and secure workflow for managing encryption and decryption tasks.
-
----
-
-## Key Features
-
-### Client.php
-
-The **Client** script plays a crucial role in the encryption process by handling the following tasks:
-
-1. **OTP Generation**: Creates a unique one-time password (OTP) for secure encryption key retrieval.
-2. **User Notification**: Sends OTP notifications to users via Pushover, along with additional details.
-3. **Encryption Key Retrieval**: Continuously checks a secure server endpoint, submitting the OTP to obtain the encryption key when available.
-4. **Comprehensive Logging**: Records all activities with timestamped logs, ensuring transparency and traceability.
-
-### Service.php
-
-The **Service** script handles the core encryption and decryption processes, ensuring secure key management. Its main features include:
-
-1. **Advanced Encryption and Decryption**: Uses robust encryption algorithms to protect data from unauthorized access.
-2. **Key Management**: Generates, securely stores, and rotates encryption keys to maintain integrity.
-3. **Error Handling**: Responds to invalid requests with clear error messages, ensuring security and user-friendliness.
-4. **Logging and Notifications**: Tracks all key interactions and sends critical action alerts.
-
----
+The FDE Encryption Service is a secure system for managing encryption keys needed to decrypt network storage devices (NAS) with full disk encryption. It provides a secure mechanism to deliver encryption keys to a booting system through an authenticated, one-time password process.
 
 ## How It Works
 
-### Workflow
+Think of this system as a secure lockbox with a one-time combination that only the admin knows. When your encrypted storage device boots up, it needs the key to unlock itself, but storing that key on the device would defeat the purpose of encryption. Instead:
 
-1. The **Client script** generates a one-time password (OTP) and notifies the user with relevant information.
-2. The client monitors a secure server endpoint, submitting the OTP to retrieve the encryption key.
-3. The **Service script** validates incoming requests and, if authorized, provides the requested encryption key.
-4. The service performs encryption and decryption of data securely, with detailed logs capturing each step for accountability.
+1. **Device Boot Process**:
+   - When a NAS boots up, it runs the Client script
+   - The Client generates a random one-time password (OTP)
+   - The Client sends this OTP to the admin via push notification
+   - The Client begins periodically checking the server for the key
+
+2. **Admin Authentication**:
+   - Admin receives the push notification with the OTP
+   - Admin clicks the link in the notification to access the web interface
+   - Admin authenticates with username/password
+   - Admin enters the OTP and the actual encryption password/key
+
+3. **Secure Key Delivery**:
+   - The server encrypts the password using both the system key and the OTP
+   - When the Client checks again with the correct OTP, the server:
+     - Verifies the authentication and OTP
+     - Decrypts and delivers the key
+     - Immediately deletes the stored encrypted key
+     - Logs the successful key delivery
+
+4. **Disk Decryption**:
+   - The NAS receives the encryption key
+   - The NAS uses the key to decrypt the disk
+   - The OTP file is deleted to ensure it cannot be reused
+
+## Components
+
+### Client.php
+
+This script runs on the NAS device during boot and handles:
+
+- Random OTP generation (default 6 characters)
+- Push notification delivery to admin via Pushover
+- Polling the key server for the encryption key
+- Receiving and logging the retrieved key
+
+### index.php
+
+This is the main server script that provides:
+
+- The `/getkey` endpoint for securely delivering keys
+- The `/enterkey` web interface for admins to enter keys
+- Strong encryption using Argon2id for key derivation and AES-256-CBC
+- Comprehensive logging and notifications 
+- One-time-use key delivery
+
+## Security Features
+
+- **One-Time Passwords (OTP)**: Each boot-up generates a new unique OTP
+- **Push Notifications**: Immediate admin alerts when a device requests a key
+- **Argon2id Key Derivation**: Industry-standard password hashing for key derivation
+- **AES-256-CBC Encryption**: Strong encryption for stored keys
+- **Single-Use Keys**: Encrypted keys are deleted after being read once
+- **Detailed Logging**: All activities are logged with timestamps and IP addresses
+- **HTTPS Communication**: All communication should be over HTTPS (requires proper server configuration)
+
+## Deployment
+
+The service can be easily deployed using Docker:
+
+```bash
+docker-compose up -d
+```
+
+The service will be available at http://localhost:8087 (or https:// if properly configured with SSL).
+
+## Environment Configuration
+
+The following environment variables can be configured:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| USER_AUTH_PASSWORD | Admin login password | abc |
+| CLIENT_AUTH_KEY | Authorization key for clients | xyz |
+| AES_KEY | Key for AES encryption | xxx |
+| AES_IV | Initialization vector for AES | d7575a8ffbce7bbc |
+| LOG_FILE_PATH | Path to log file | log.txt |
+
+## Security Considerations
+
+- For production use, always change the default passwords and keys
+- Configure proper SSL/TLS for the web service
+- Consider implementing IP restrictions for additional security
+- Regularly review logs for unauthorized access attempts
+- This system should be deployed on a separate, secured server

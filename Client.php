@@ -36,7 +36,7 @@ function notify($title, $message, $priority = 0, $sound = 'gamelan') {
 		"url" => NOTIFICATION_URL,
         "message" => $message,
     ]);
-	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     curl_setopt($ch, CURLOPT_SAFE_UPLOAD, true);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $response = curl_exec($ch);
@@ -60,8 +60,7 @@ function check_getkey_endpoint($data) {
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-        // Disable SSL certificate verification
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 
         // Include header in the output for status code check
         curl_setopt($ch, CURLOPT_HEADER, true);

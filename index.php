@@ -3,7 +3,6 @@
 $userAuthPassword = getenv('USER_AUTH_PASSWORD') ?: 'abc';
 $clientAuthKey = getenv('CLIENT_AUTH_KEY') ?: 'xyz';
 $aesKey = getenv('AES_KEY') ?: 'xxx';
-$aesIv = getenv('AES_IV') ?: 'd7575a8ffbce7bbc';
 $logFilePath = getenv('LOG_FILE_PATH') ?: 'log.txt';
 
 
