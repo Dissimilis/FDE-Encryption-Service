@@ -350,5 +350,5 @@ if ($_SERVER['REQUEST_URI'] === '/enterkey') {
 // Log 404 error
 logMessage('404 Not Found', false);
 // Return 404 Not Found for any other endpoint
-handleError(404, '^_^ '.$_SERVER['REQUEST_URI']);
+handleError(404, '^_^ '..getContainerStartTime().'  '.$_SERVER['REQUEST_URI']);
 ?>
