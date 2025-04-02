@@ -331,7 +331,7 @@ if ($_SERVER['REQUEST_URI'] === '/enterkey') {
 </head>
 <body>
     <form method="post" action="/enterkey">	
-	<p style="margin-bottom:25px">Key status: '.$encKeyExists.'</p>
+	<p style="margin-bottom:25px">Key status => '.$encKeyExists.'</p>
         <label for="otp">Enter OTP:</label><br>
         <input type="text" id="otp" name="otp" required><br><br>
 		<label for="encryption_key">Enter Encryption Password:</label><br>
