@@ -5,7 +5,83 @@ $clientAuthKey = getenv('CLIENT_AUTH_KEY') ?: 'xyz';
 $aesKey = getenv('AES_KEY') ?: 'xxx';
 $logFilePath = getenv('LOG_FILE_PATH') ?: 'log.txt';
 
+// Rate limiting settings
+define('RATE_LIMIT_PER_MINUTE', 60);
+define('RATE_LIMIT_PER_HOUR', 300);
+define('RATE_LIMIT_FILE', 'rate_limits.json');
 
+/**
+ * Simple rate limiting function
+ * Limits requests to RATE_LIMIT_PER_MINUTE per minute and RATE_LIMIT_PER_HOUR per hour per IP
+ */
+function checkRateLimit() {
+    // Get client IP address
+    $clientIp = $_SERVER['REMOTE_ADDR'];
+    if (isset($_SERVER['HTTP_X_FORWARDED_FOR']) && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $clientIp = $_SERVER['HTTP_X_FORWARDED_FOR'];
+    }
+    
+    // Load existing rate limit data
+    $rateLimits = [];
+    if (file_exists(RATE_LIMIT_FILE)) {
+        $fileContent = file_get_contents(RATE_LIMIT_FILE);
+        if ($fileContent !== false) {
+            $rateLimits = json_decode($fileContent, true) ?: [];
+        }
+    }
+    
+    // Get current time
+    $currentTime = time();
+    
+    // Initialize or get rate limit data for this IP
+    if (!isset($rateLimits[$clientIp])) {
+        $rateLimits[$clientIp] = [
+            'minute_count' => 0,
+            'minute_start' => $currentTime,
+            'hour_count' => 0,
+            'hour_start' => $currentTime
+        ];
+    }
+    
+    // Check and reset minute counter if needed
+    if ($currentTime - $rateLimits[$clientIp]['minute_start'] >= 60) {
+        $rateLimits[$clientIp]['minute_count'] = 0;
+        $rateLimits[$clientIp]['minute_start'] = $currentTime;
+    }
+    
+    // Check and reset hour counter if needed
+    if ($currentTime - $rateLimits[$clientIp]['hour_start'] >= 3600) {
+        $rateLimits[$clientIp]['hour_count'] = 0;
+        $rateLimits[$clientIp]['hour_start'] = $currentTime;
+    }
+    
+    // Increment counters
+    $rateLimits[$clientIp]['minute_count']++;
+    $rateLimits[$clientIp]['hour_count']++;
+    
+    // Check if limits are exceeded
+    if ($rateLimits[$clientIp]['minute_count'] > RATE_LIMIT_PER_MINUTE) {
+        logMessage("Rate limit exceeded (per minute) for IP: $clientIp", false);
+        handleError(429, 'Too Many Requests - Rate limit exceeded. Please try again later.');
+    }
+    
+    if ($rateLimits[$clientIp]['hour_count'] > RATE_LIMIT_PER_HOUR) {
+        logMessage("Rate limit exceeded (per hour) for IP: $clientIp", false);
+        handleError(429, 'Too Many Requests - Hourly rate limit exceeded. Please try again later.');
+    }
+    
+    // Clean up old entries (older than 2 hours)
+    foreach ($rateLimits as $ip => $data) {
+        if ($currentTime - $data['hour_start'] > 7200) {
+            unset($rateLimits[$ip]);
+        }
+    }
+    
+    // Save updated rate limit data
+    file_put_contents(RATE_LIMIT_FILE, json_encode($rateLimits, JSON_PRETTY_PRINT));
+    
+    return true;
+}
 
 function encryptData($data, $password) {
     // Generate a secure, random salt
@@ -105,6 +181,7 @@ function logMessage($message, $push = true) {
 	
     file_put_contents($logFilePath, $logMessage, FILE_APPEND);
 }
+
 function readEncryptionKey() {
     $filePath = 'encryption_key.txt';   
 	if (file_exists($filePath)) {	
@@ -123,13 +200,14 @@ function writeEncryptionKey($encryptionKey) {
     return file_put_contents('encryption_key.txt', $encryptionKey);
 }
 
-
 // Function to handle errors
 function handleError($code, $message) {
     http_response_code($code);
     exit($message);
 }
 
+// Apply rate limiting for all requests
+checkRateLimit();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/getkey') {
     // Get authorization string from request body
@@ -240,8 +318,6 @@ if ($_SERVER['REQUEST_URI'] === '/enterkey') {
 	
     exit();
 }
-
-
 
 // Log 404 error
 logMessage('404 Not Found', false);
