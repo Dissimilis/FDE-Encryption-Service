@@ -8,6 +8,7 @@ services:
     volumes:
       - fde-data:/var/www/data/
     environment:
+      TEST: xyz
       USER_AUTH_PASSWORD: abc
       CLIENT_AUTH_KEY: xyz
       AES_KEY: xxx
