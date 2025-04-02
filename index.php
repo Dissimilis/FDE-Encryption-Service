@@ -200,6 +200,20 @@ function writeEncryptionKey($encryptionKey) {
     return file_put_contents('encryption_key.txt', $encryptionKey);
 }
 
+/**
+ * Get container start time using the index.php file modification time
+ */
+function getContainerStartTime() {
+    // Get the modification time of this file (index.php)
+    $indexPhpModTime = filemtime(__FILE__);
+    if ($indexPhpModTime === false) {
+        return 'Unknown';
+    }
+    
+    // Format the timestamp
+    return date('Y-m-d H:i:s', $indexPhpModTime);
+}
+
 // Function to handle errors
 function handleError($code, $message) {
     http_response_code($code);
@@ -271,6 +285,7 @@ if ($_SERVER['REQUEST_URI'] === '/enterkey') {
         justify-content: center;
         align-items: center;
         height: 100vh;
+        flex-direction: column;
     }
     form {
         background-color: #ffffff;
@@ -278,6 +293,7 @@ if ($_SERVER['REQUEST_URI'] === '/enterkey') {
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         text-align: center;
+        margin-bottom: 20px;
     }
     label {
         font-weight: bold;
@@ -302,6 +318,15 @@ if ($_SERVER['REQUEST_URI'] === '/enterkey') {
     input[type="submit"]:hover {
         background-color: #45a049;
     }
+    .container-info {
+        background-color: #ffcccc;
+        color: #990000;
+        padding: 10px 15px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-top: 10px;
+        text-align: center;
+    }
 </style>
 </head>
 <body>
@@ -313,6 +338,9 @@ if ($_SERVER['REQUEST_URI'] === '/enterkey') {
         <input type="text" id="encryption_key" name="encryption_key" required><br><br>
         <input type="submit" value="Submit">
     </form>
+    <div class="container-info">
+        Container started: '.getContainerStartTime().'
+    </div>
 </body>
 </html>';
 	
